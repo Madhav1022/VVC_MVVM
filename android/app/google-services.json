@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "843509906849",
+    "project_id": "virtual-visiting-card-mvvm",
+    "storage_bucket": "virtual-visiting-card-mvvm.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:843509906849:android:1fcdf6f990698b36205fe0",
+        "android_client_info": {
+          "package_name": "com.example.virtualVisitingCard"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCqOi7OvggmZpJKZMH1lowuOnU5HTKb6Pk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

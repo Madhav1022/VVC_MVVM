@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../viewmodels/camera_view_model.dart';
 

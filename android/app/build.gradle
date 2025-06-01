@@ -19,17 +19,14 @@ android {
     kotlinOptions {
         jvmTarget = "1.8" // ✅ Fixed syntax
     }
-
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId "com.example.virtual_visiting_card" // ✅ Ensure it matches your namespace
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 21
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        applicationId "com.example.virtualVisitingCard"
+        minSdkVersion 23
+        targetSdkVersion 34
+        versionCode 1
+        versionName "1.0.0"
     }
+
 
     buildTypes {
         release {
@@ -43,3 +40,6 @@ android {
 flutter {
     source "../.."
 }
+
+apply plugin: 'com.google.gms.google-services'
+

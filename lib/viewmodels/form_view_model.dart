@@ -1,4 +1,3 @@
-
 import '../models/contact_model.dart';
 import '../repositories/contact_repository.dart';
 import 'base_view_model.dart';
@@ -26,26 +25,29 @@ class FormViewModel extends BaseViewModel {
     String? website,
   }) {
     _contact = ContactModel(
-      id: _contact.id,
-      name: name ?? _contact.name,
-      mobile: mobile ?? _contact.mobile,
-      email: email ?? _contact.email,
-      address: address ?? _contact.address,
-      company: company ?? _contact.company,
+      id:          _contact.id,
+      name:        name        ?? _contact.name,
+      mobile:      mobile      ?? _contact.mobile,
+      email:       email       ?? _contact.email,
+      address:     address     ?? _contact.address,
+      company:     company     ?? _contact.company,
       designation: designation ?? _contact.designation,
-      website: website ?? _contact.website,
-      image: _contact.image,
-      favorite: _contact.favorite,
+      website:     website     ?? _contact.website,
+      image:       _contact.image,
+      favorite:    _contact.favorite,
     );
     notifyListeners();
   }
 
+  /// Saves locally and mirrors to Firebase
   Future<bool> saveContact() async {
     return await executeOperation(() async {
       await _repository.insertContact(_contact);
       return true;
     }) ?? false;
   }
+
+  // validators...
 
   String? validateRequired(String? value, String fieldName) {
     if (value == null || value.isEmpty) {

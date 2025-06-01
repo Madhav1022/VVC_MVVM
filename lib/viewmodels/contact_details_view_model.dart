@@ -1,8 +1,3 @@
-
-import 'dart:io';
-import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../models/contact_model.dart';
 import '../repositories/contact_repository.dart';
 import 'base_view_model.dart';
@@ -10,90 +5,59 @@ import 'base_view_model.dart';
 class ContactDetailsViewModel extends BaseViewModel {
   final ContactRepository _repository;
   ContactModel? _contact;
+  ContactModel? get contact => _contact;
 
   ContactDetailsViewModel(this._repository);
 
-  ContactModel? get contact => _contact;
-
-  Future<void> loadContact(int id) async {
+  /// Load the contact from Firestore by its document ID.
+  Future<void> loadContactRemote(String firebaseId) async {
     await executeOperation(() async {
-      _contact = await _repository.getContactById(id);
-      if (_contact == null) {
-        setError('Contact not found');
-      }
+      _contact = await _repository.getRemoteContact(firebaseId);
+      if (_contact == null) setError('Contact not found');
     });
   }
 
+  /// Toggle the favorite flag locally and remotely.
   Future<void> toggleFavorite() async {
-    if (_contact == null) return;
+    if (_contact == null || _contact!.id == null) return;
+
+    // Prepare the new value (1 = true, 0 = false).
+    final newVal = _contact!.favorite ? 0 : 1;
 
     await executeOperation(() async {
-      await _repository.updateFavorite(
-          _contact!.id!,
-          _contact!.favorite ? 0 : 1
-      );
-      // Update local state
+      // 1) Update local SQLite & Firestore (via repository)
+      await _repository.updateFavorite(_contact!.id!, newVal);
+
+      // 2) Update the in-memory model and notify listeners
       _contact = ContactModel(
-        id: _contact!.id,
-        name: _contact!.name,
-        mobile: _contact!.mobile,
-        email: _contact!.email,
-        address: _contact!.address,
-        company: _contact!.company,
+        id:          _contact!.id,
+        firebaseId:  _contact!.firebaseId,
+        name:        _contact!.name,
+        mobile:      _contact!.mobile,
+        email:       _contact!.email,
+        address:     _contact!.address,
+        company:     _contact!.company,
         designation: _contact!.designation,
-        website: _contact!.website,
-        image: _contact!.image,
-        favorite: !_contact!.favorite,
+        website:     _contact!.website,
+        image:       _contact!.image,
+        favorite:    newVal == 1,
       );
       notifyListeners();
     });
   }
 
-  Future<String?> getImagePath() async {
-    if (_contact == null || _contact!.image.isEmpty) return null;
+  /// Delegate URL launches to the repository
+  Future<void> launchPhoneUrl(String phoneNumber) =>
+      _repository.launchPhoneUrl(phoneNumber);
+  Future<void> launchEmailUrl(String email) =>
+      _repository.launchEmailUrl(email);
+  Future<void> launchMapUrl(String address) =>
+      _repository.launchMapUrl(address);
+  Future<void> launchWebUrl(String website) =>
+      _repository.launchWebUrl(website);
 
-    final directory = await getApplicationDocumentsDirectory();
-    final path = '${directory.path}/${_contact!.image}';
-    final file = File(path);
-
-    if (await file.exists()) {
-      return path;
-    }
-    return null;
-  }
-
-  Future<void> launchPhoneUrl(String phoneNumber) async {
-    final url = Uri.parse('tel:$phoneNumber');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
-    }
-  }
-
-  Future<void> launchEmailUrl(String email) async {
-    final url = Uri.parse('mailto:$email');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
-    }
-  }
-
-  Future<void> launchMapUrl(String address) async {
-    final url = Uri.parse(Platform.isAndroid
-        ? 'geo:0,0?q=$address'
-        : 'https://maps.apple.com/?q=$address');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
-    }
-  }
-
-  Future<void> launchWebUrl(String website) async {
-    final url = Uri.parse(website.startsWith('http') ? website : 'https://$website');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
-    }
-  }
-
-  bool canMakeCall() => _contact != null && _contact!.mobile.isNotEmpty;
-  bool canSendEmail() => _contact != null && _contact!.email.isNotEmpty;
-  bool canOpenMap() => _contact != null && _contact!.address.isNotEmpty;
-  bool canOpenWebsite() => _contact != null && _contact!.website.isNotEmpty;
+  bool canMakeCall()    => _contact?.mobile.isNotEmpty  == true;
+  bool canSendEmail()   => _contact?.email.isNotEmpty   == true;
+  bool canOpenMap()     => _contact?.address.isNotEmpty == true;
+  bool canOpenWebsite() => _contact?.website.isNotEmpty == true;
 }

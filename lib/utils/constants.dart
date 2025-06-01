@@ -1,4 +1,3 @@
-
 class ContactProperties {
   static const List<String> values = [
     name,

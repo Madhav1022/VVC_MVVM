@@ -56,3 +56,11 @@ bool isValidPhone(String phone) {
   if (phone.isEmpty) return false;
   return phone.length >= 10;
 }
+
+Future<void> logLatency(String operation, int durationMs, {String? source}) async {
+  final timestamp = DateTime.now().toIso8601String();
+  final logMessage = '[$timestamp] $operation (Source: ${source ?? 'Unknown'}) took $durationMs ms';
+
+  // Log to console
+  print(logMessage);
+}

@@ -1,5 +1,5 @@
-import 'package:path/path.dart' as P;
 import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart' as P;
 import '../models/contact_model.dart';
 
 class DbHelper {
@@ -7,75 +7,85 @@ class DbHelper {
   factory DbHelper() => _instance;
   DbHelper._internal();
 
+  static const _dbName    = 'contact.db';
+  static const _dbVersion = 3;
+
   Database? _db;
 
   final String _createTableContact = '''
-    create table tbl_contact(
-      id integer primary key autoincrement,
-      name text,
-      mobile text,
-      email text,
-      address text,
-      company text,
-      designation text,
-      website text,
-      image text,
-      favorite integer)
+    CREATE TABLE tbl_contact(
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      firebase_id  TEXT,
+      name         TEXT,
+      mobile       TEXT,
+      email        TEXT,
+      address      TEXT,
+      company      TEXT,
+      designation  TEXT,
+      website      TEXT,
+      image        TEXT,
+      favorite     INTEGER
+    )
   ''';
 
   Future<Database> _getDb() async {
     if (_db != null) return _db!;
-
-    final dbPath = P.join(await getDatabasesPath(), 'contact.db');
+    final path = P.join(await getDatabasesPath(), _dbName);
     _db = await openDatabase(
-      dbPath,
-      version: 2,
-      onCreate: (db, version) {
-        db.execute(_createTableContact);
+      path,
+      version: _dbVersion,
+      onCreate: (db, version) async {
+        await db.execute(_createTableContact);
       },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion == 1) {
-          await db.execute('alter table tbl_contact rename to contact_old');
-          await db.execute(_createTableContact);
-          final rows = await db.query('contact_old');
-          for (var row in rows) {
-            await db.insert('tbl_contact', row);
-          }
-          await db.execute('drop table if exists contact_old');
+      onUpgrade: (db, oldV, newV) async {
+        if (oldV < 3) {
+          await db.execute(
+              'ALTER TABLE tbl_contact ADD COLUMN firebase_id TEXT;'
+          );
         }
       },
     );
     return _db!;
   }
 
-  Future<int> insertContact(ContactModel contact) async {
+  Future<int> insertContact(ContactModel c) async {
     final db = await _getDb();
     return db.insert(
       'tbl_contact',
-      contact.toMap(),
+      c.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<int> updateContact(ContactModel c) async {
+    final db = await _getDb();
+    return db.update(
+      'tbl_contact',
+      c.toMap(),
+      where: 'id = ?',
+      whereArgs: [c.id],
     );
   }
 
   Future<List<ContactModel>> getAllContacts() async {
     final db = await _getDb();
-    final List<Map<String, dynamic>> maps = await db.query('tbl_contact');
-    return List.generate(maps.length, (i) => ContactModel.fromMap(maps[i]));
+    final maps = await db.query('tbl_contact');
+    return maps.map((m) => ContactModel.fromMap(m)).toList();
   }
 
   Future<List<ContactModel>> getAllFavoriteContacts() async {
     final db = await _getDb();
-    final List<Map<String, dynamic>> maps = await db.query(
+    final maps = await db.query(
       'tbl_contact',
       where: 'favorite = ?',
       whereArgs: [1],
     );
-    return List.generate(maps.length, (i) => ContactModel.fromMap(maps[i]));
+    return maps.map((m) => ContactModel.fromMap(m)).toList();
   }
 
   Future<ContactModel?> getContactById(int id) async {
     final db = await _getDb();
-    final List<Map<String, dynamic>> maps = await db.query(
+    final maps = await db.query(
       'tbl_contact',
       where: 'id = ?',
       whereArgs: [id],
@@ -103,20 +113,9 @@ class DbHelper {
     );
   }
 
-  Future<int> updateContact(ContactModel contact) async {
+  /// Clears out all local contacts (for fresh sync)
+  Future<int> clearContacts() async {
     final db = await _getDb();
-    return db.update(
-      'tbl_contact',
-      contact.toMap(),
-      where: 'id = ?',
-      whereArgs: [contact.id],
-    );
+    return db.delete('tbl_contact');
   }
 }
-
-
-
-
-
-
-
